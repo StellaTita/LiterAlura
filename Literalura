@@ -1,0 +1,198 @@
+# Proyecto ONE - Catálogo de Libros y Autores
+
+Proyecto desarrollado en Java con Spring Boot y Spring Data JPA para gestionar un catálogo de libros y autores, utilizando PostgreSQL como base de datos.
+
+## Funcionalidades Implementadas
+
+- Búsqueda de libros por título.
+- Listado de todos los libros.
+- Estadísticas sobre la cantidad de libros en determinado idioma.
+- Listado de autores.
+- Listado de autores vivos en un determinado año.
+
+## Tecnologías Utilizadas
+
+- Java
+- Spring Boot
+- Spring Data JPA
+- PostgreSQL
+
+## Instrucciones de Instalación y Configuración
+
+1. Clonar el repositorio.
+2. Configurar la base de datos PostgreSQL.
+3. Configurar el archivo `application.properties` con los datos de conexión a la base de datos.
+4. Compilar y ejecutar la aplicación.
+
+## Uso
+
+- Ejecutar la aplicación y utilizar los endpoints proporcionados para acceder a las funcionalidades del catálogo.
+
+
+// Author.java
+import javax.persistence.*;
+
+@Entity
+public class Author {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private int birthYear;
+    private Integer deathYear; // Puede ser nulo si el autor está vivo
+
+    // Getters, Setters, Constructores y otros métodos según sea necesario
+}
+
+
+// AuthorRepository.java
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface AuthorRepository extends JpaRepository<Author, Long> {
+    // Métodos personalizados si es necesario
+}
+
+
+// CatalogService.java
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+
+@Service
+public class CatalogService {
+
+    private final BookRepository bookRepository;
+    private final AuthorRepository authorRepository;
+
+    public CatalogService(BookRepository bookRepository, AuthorRepository authorRepository) {
+        this.bookRepository = bookRepository;
+        this.authorRepository = authorRepository;
+    }
+
+    @Transactional
+    public void insertBookWithAuthor(String bookTitle, String authorName, int authorBirthYear, Integer authorDeathYear) {
+        Author author = new Author();
+        author.setName(authorName);
+        author.setBirthYear(authorBirthYear);
+        author.setDeathYear(authorDeathYear);
+
+        authorRepository.save(author);
+
+        Book book = new Book();
+        book.setTitle(bookTitle);
+        book.setAuthor(author);
+
+        bookRepository.save(book);
+    }
+
+    public long countBooksByLanguage(String language) {
+        return bookRepository.countByLanguagesContaining(language);
+    }
+
+    public List<Book> findBooksByLanguage(String language) {
+        return bookRepository.findByLanguagesContaining(language);
+    }
+
+    public List<Author> findAuthorsByLivingYear(int year) {
+        return authorRepository.findByBirthYearLessThanEqualAndDeathYearGreaterThanEqualOrDeathYearIsNull(year, year);
+    }
+}
+
+
+// CatalogService.java
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+
+@Service
+public class CatalogService {
+
+    private final BookRepository bookRepository;
+    private final AuthorRepository authorRepository;
+
+    public CatalogService(BookRepository bookRepository, AuthorRepository authorRepository) {
+        this.bookRepository = bookRepository;
+        this.authorRepository = authorRepository;
+    }
+
+    @Transactional
+    public void insertBookWithAuthor(String bookTitle, String authorName, int authorBirthYear, Integer authorDeathYear) {
+        Author author = new Author();
+        author.setName(authorName);
+        author.setBirthYear(authorBirthYear);
+        author.setDeathYear(authorDeathYear);
+
+        authorRepository.save(author);
+
+        Book book = new Book();
+        book.setTitle(bookTitle);
+        book.setAuthor(author);
+
+        bookRepository.save(book);
+    }
+
+    public long countBooksByLanguage(String language) {
+        return bookRepository.countByLanguagesContaining(language);
+    }
+
+    public List<Book> findBooksByLanguage(String language) {
+        return bookRepository.findByLanguagesContaining(language);
+    }
+
+    public List<Author> findAuthorsByLivingYear(int year) {
+        return authorRepository.findByBirthYearLessThanEqualAndDeathYearGreaterThanEqualOrDeathYearIsNull(year, year);
+    }
+}
+
+
+// BookController.java
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/books")
+public class BookController {
+
+    private final CatalogService catalogService;
+
+    public BookController(CatalogService catalogService) {
+        this.catalogService = catalogService;
+    }
+
+    @GetMapping("/count-by-language/{language}")
+    public long countBooksByLanguage(@PathVariable String language) {
+        return catalogService.countBooksByLanguage(language);
+    }
+
+    @GetMapping("/list-by-language/{language}")
+    public List<Book> findBooksByLanguage(@PathVariable String language) {
+        return catalogService.findBooksByLanguage(language);
+    }
+}
+
+
+// BookController.java
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/books")
+public class BookController {
+
+    private final CatalogService catalogService;
+
+    public BookController(CatalogService catalogService) {
+        this.catalogService = catalogService;
+    }
+
+    @GetMapping("/count-by-language/{language}")
+    public long countBooksByLanguage(@PathVariable String language) {
+        return catalogService.countBooksByLanguage(language);
+    }
+
+    @GetMapping("/list-by-language/{language}")
+    public List<Book> findBooksByLanguage(@PathVariable String language) {
+        return catalogService.findBooksByLanguage(language);
+    }
+}
+
+
